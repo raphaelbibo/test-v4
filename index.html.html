@@ -1,0 +1,1801 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Film Finder</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI",sans-serif;background:radial-gradient(circle at top left,rgba(255,103,76,.18),transparent 24%),linear-gradient(160deg,#06101d,#09182e 45%,#040913);color:#eef4ff;min-height:100vh}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.app{display:grid;grid-template-columns:270px 1fr;min-height:100vh}
+.sidebar{padding:22px;background:rgba(6,12,24,.84);backdrop-filter:blur(18px);border-right:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:16px}
+.brand,.card,.section{background:rgba(10,20,38,.82);border:1px solid rgba(255,255,255,.08);border-radius:24px;box-shadow:0 24px 50px rgba(0,0,0,.28)}
+.brand{padding:20px;background:linear-gradient(140deg,rgba(255,92,92,.18),rgba(255,177,118,.08));cursor:pointer;transition:.18s}
+.brand:hover{border-color:rgba(255,150,100,.3);transform:translateY(-1px)}
+.brand small{display:inline-block;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.08);margin-bottom:12px;font-size:12px}
+.brand h1{font-size:30px;margin-bottom:10px}
+.brand p,.muted,.section p,.profile-mail,.setting p,.subtle{color:#9eb0cf}
+.profile{padding:18px}
+.profile-top{display:flex;gap:12px;align-items:center;margin-bottom:14px}
+.avatar{width:56px;height:56px;border-radius:18px;display:grid;place-items:center;font-weight:700;background:linear-gradient(135deg,#ff5f57,#ff9a62);font-size:20px;flex-shrink:0}
+.profile-name{font-weight:700;font-size:18px}
+.profile-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.mini{padding:12px;border-radius:16px;background:rgba(255,255,255,.04);text-align:center}
+.mini strong{display:block;font-size:20px}
+.mini span{font-size:12px;color:#9eb0cf}
+.nav{display:grid;gap:6px}
+.nav button{border:none;background:transparent;color:#a4b5d4;text-align:left;padding:14px 16px;border-radius:16px;display:flex;align-items:center;gap:10px}
+.nav button.active,.nav button:hover{background:rgba(255,255,255,.06);color:#fff}
+.main{padding:20px;overflow-x:hidden}
+.top{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:18px}
+.top h2{font-size:30px;margin-bottom:6px}
+.top-right{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.ghost,.btn{border-radius:12px;padding:12px 14px;border:1px solid rgba(255,255,255,.08)}
+.ghost{background:rgba(11,22,41,.96);color:#fff}
+.btn.primary{background:linear-gradient(135deg,#ff6155,#ff9b62);color:#fff;border:none}
+.btn.soft{background:rgba(255,255,255,.05);color:#fff}
+.btn.danger{background:rgba(255,95,95,.08);color:#ffb4b4;border-color:rgba(255,95,95,.3)}
+.btn.success{background:rgba(80,200,120,.1);color:#80e8a0;border-color:rgba(80,200,120,.3)}
+.page{display:none}
+.page.active{display:block}
+.section{padding:22px}
+.section-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:18px}
+.section-grid{display:grid;grid-template-columns:1fr 340px;gap:16px}
+.filters{display:grid;grid-template-columns:1.5fr repeat(4,1fr) auto;gap:10px;margin-bottom:18px}
+.results{display:grid;grid-template-columns:repeat(auto-fill,minmax(102px,1fr));gap:10px}
+.movie{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:7px;transition:.18s}
+.movie:hover{transform:translateY(-4px);border-color:rgba(255,255,255,.18)}
+.movie img,.no-poster{width:100%;aspect-ratio:2/3;border-radius:10px;display:block}
+.movie img{object-fit:cover}
+.no-poster{display:grid;place-items:center;background:rgba(255,255,255,.05);font-size:14px;color:#8ea1c1;text-align:center;padding:8px}
+.movie h4{font-size:11px;margin:7px 0 5px;min-height:28px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.meta{display:flex;justify-content:space-between;font-size:10px;color:#9eb0cf;margin-bottom:6px;gap:6px}
+.score{color:#ffd66d;font-weight:700}
+.movie-actions{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.movie-actions button,.pager button{border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.05);color:#fff;border-radius:10px;padding:7px 5px;font-size:10px}
+.movie-actions button.added{background:rgba(255,155,98,.1);border-color:rgba(255,155,98,.35);color:#ffd5bf}
+.pager{display:none;justify-content:center;gap:8px;margin-top:18px;flex-wrap:wrap}
+.stats{padding:22px}
+.stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:12px}
+.stat{padding:16px;border-radius:18px;background:rgba(255,255,255,.04)}
+.stat strong{display:block;font-size:24px;margin-bottom:5px}
+.stack,.cards2{display:grid;gap:16px}
+.cards2{grid-template-columns:repeat(2,1fr)}
+.setting,.panel{padding:18px;border-radius:18px;background:rgba(255,255,255,.04)}
+.panel h4,.setting h4{font-size:16px;margin-bottom:8px}
+.empty,.loading{text-align:center;color:#9eb0cf;padding:42px 10px}
+.spinner{width:24px;height:24px;border:3px solid rgba(255,255,255,.12);border-top-color:#ff6155;border-radius:50%;margin:0 auto 12px;animation:spin .8s linear infinite}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(90px);background:rgba(7,14,27,.96);border:1px solid rgba(255,255,255,.08);padding:14px 18px;border-radius:12px;transition:.25s;z-index:100}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:.2s;z-index:50}
+.modal-backdrop.open{opacity:1;pointer-events:auto}
+.modal{width:min(480px,100%);background:#0b1730;border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:24px;max-height:90vh;overflow-y:auto}
+.modal h3{font-size:24px;margin-bottom:8px}
+.stars{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:14px 0}
+.stars span{width:36px;height:36px;display:grid;place-items:center;border-radius:12px;background:rgba(255,255,255,.05);color:#64789d;cursor:pointer;font-size:18px}
+.stars span.active{color:#ffd66d;background:rgba(255,214,109,.1)}
+.modal-actions{display:flex;justify-content:center;gap:10px;margin-top:14px}
+.random-box{display:grid;grid-template-columns:180px 1fr;gap:18px;align-items:start}
+.random-box img,.random-box .no-poster{width:100%;aspect-ratio:2/3;border-radius:18px;object-fit:cover}
+.random-box h3{font-size:30px;margin-bottom:10px}
+.tags{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.tag{padding:7px 11px;border-radius:999px;background:rgba(255,255,255,.05);font-size:12px;color:#9eb0cf}
+.random-card{animation:cardIn .45s ease}
+.recommend-list{display:grid;gap:10px;margin-top:12px}
+.recommend-item{display:grid;grid-template-columns:56px 1fr;gap:10px;padding:10px;border-radius:14px;background:rgba(255,255,255,.04);align-items:center}
+.recommend-item img,.recommend-item .no-poster{width:56px;height:84px;border-radius:10px;object-fit:cover}
+.recommend-item h5{font-size:13px;margin-bottom:4px}
+.inline-actions{display:flex;gap:8px;flex-wrap:wrap}
+.upcoming-highlight{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.upcoming-box{padding:14px;border-radius:16px;background:rgba(255,255,255,.04)}
+
+/* AUTH SCREENS */
+.auth-screen{display:none;position:fixed;inset:0;background:radial-gradient(circle at top left,rgba(255,103,76,.18),transparent 24%),linear-gradient(160deg,#06101d,#09182e 45%,#040913);z-index:200;align-items:center;justify-content:center;padding:20px}
+.auth-screen.show{display:flex}
+.auth-box{width:min(440px,100%);background:#0b1730;border:1px solid rgba(255,255,255,.1);border-radius:28px;padding:32px}
+.auth-box h2{font-size:28px;margin-bottom:6px}
+.auth-box p{color:#9eb0cf;margin-bottom:24px}
+.auth-form{display:grid;gap:12px}
+.auth-form input{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;color:#fff;font-size:15px;outline:none;transition:.2s}
+.auth-form input:focus{border-color:rgba(255,97,85,.5);background:rgba(255,97,85,.05)}
+.auth-err{color:#ff8888;font-size:13px;text-align:center;min-height:20px}
+.auth-switch{text-align:center;margin-top:14px;color:#9eb0cf;font-size:14px}
+.auth-switch button{background:none;border:none;color:#ff9b62;text-decoration:underline;cursor:pointer;font-size:14px}
+.auth-logo{font-size:40px;margin-bottom:16px;display:block;text-align:center}
+
+/* REVIEWS PAGE */
+.review-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:18px;padding:16px;display:grid;grid-template-columns:80px 1fr;gap:14px;align-items:start;transition:.18s}
+.review-card:hover{border-color:rgba(255,255,255,.14)}
+.review-card img,.review-card .no-poster-sm{width:80px;height:120px;border-radius:12px;object-fit:cover}
+.no-poster-sm{display:grid;place-items:center;background:rgba(255,255,255,.05);font-size:12px;color:#8ea1c1}
+.review-stars{display:flex;gap:3px;margin:6px 0}
+.review-star{color:#ffd66d;font-size:16px}
+.review-star.empty{color:#2a3a5a}
+.review-text-area{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px;color:#fff;resize:vertical;min-height:80px;width:100%;outline:none}
+.review-text-area:focus{border-color:rgba(255,97,85,.4)}
+.reviews-grid{display:grid;gap:12px;margin-top:16px}
+.review-note{font-size:13px;color:#9eb0cf;font-style:italic;margin-top:6px;border-left:2px solid rgba(255,155,98,.3);padding-left:10px}
+
+/* SOCIAL / SUBSCRIPTIONS */
+.user-card{display:flex;align-items:center;gap:14px;padding:14px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06)}
+.user-card .u-avatar{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-weight:700;background:linear-gradient(135deg,#3a8aff,#a066ff);font-size:18px;flex-shrink:0}
+.user-card .u-info{flex:1}
+.user-card .u-name{font-weight:700;font-size:15px}
+.user-card .u-stats{font-size:12px;color:#9eb0cf}
+.users-grid{display:grid;gap:10px;margin-top:14px}
+.search-bar{display:flex;gap:10px;margin-bottom:18px}
+.search-bar input{flex:1}
+.follower-reviews{display:grid;gap:12px;margin-top:14px}
+.follower-review-item{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:14px;display:grid;grid-template-columns:40px 1fr;gap:12px}
+.follower-review-item .sm-avatar{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-weight:700;font-size:14px;background:linear-gradient(135deg,#3a8aff,#a066ff);flex-shrink:0}
+
+/* GAMES */
+.games-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-top:16px}
+.game-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:18px;text-align:center;cursor:pointer;transition:.2s;position:relative;overflow:hidden}
+.game-card::before{content:"";position:absolute;inset:0;background:var(--gc,rgba(255,97,85,.1));opacity:0;transition:.2s}
+.game-card:hover::before{opacity:1}
+.game-card:hover{transform:translateY(-4px);border-color:rgba(255,255,255,.18)}
+.game-icon{font-size:40px;margin-bottom:10px;display:block}
+.game-card h4{font-size:16px;margin-bottom:6px}
+.game-card p{font-size:12px;color:#9eb0cf}
+.game-badge{position:absolute;top:10px;right:10px;font-size:10px;padding:4px 8px;border-radius:999px;background:rgba(255,155,98,.15);color:#ffb87a;border:1px solid rgba(255,155,98,.3)}
+
+/* GAME MODAL */
+.game-modal{width:min(600px,100%);background:#0b1730;border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:24px;max-height:92vh;overflow-y:auto}
+.quiz-q{font-size:18px;font-weight:700;margin-bottom:16px;line-height:1.5}
+.quiz-options{display:grid;gap:10px}
+.quiz-opt{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 18px;color:#eef4ff;text-align:left;transition:.15s;font-size:15px}
+.quiz-opt:hover{background:rgba(255,255,255,.09)}
+.quiz-opt.correct{background:rgba(80,220,120,.12);border-color:rgba(80,220,120,.4);color:#80e8a0}
+.quiz-opt.wrong{background:rgba(255,80,80,.1);border-color:rgba(255,80,80,.35);color:#ff9999}
+.quiz-score{text-align:center;font-size:36px;font-weight:700;margin:16px 0}
+.wordle-grid{display:grid;gap:8px;margin:16px auto;width:fit-content}
+.wordle-row{display:flex;gap:8px}
+.wordle-cell{width:50px;height:50px;border:2px solid rgba(255,255,255,.15);border-radius:10px;display:grid;place-items:center;font-size:22px;font-weight:700;text-transform:uppercase;transition:.2s}
+.wordle-cell.correct{background:#538d4e;border-color:#538d4e}
+.wordle-cell.present{background:#b59f3b;border-color:#b59f3b}
+.wordle-cell.absent{background:#3a3a4a;border-color:#3a3a4a}
+.wordle-cell.active-cell{border-color:#ff9b62}
+.wordle-keyboard{display:grid;gap:6px;margin-top:12px}
+.wk-row{display:flex;gap:5px;justify-content:center}
+.wk-key{background:rgba(255,255,255,.1);border:none;color:#fff;border-radius:8px;padding:10px 8px;min-width:36px;font-size:13px;font-weight:700;transition:.15s}
+.wk-key:hover{background:rgba(255,255,255,.18)}
+.wk-key.correct{background:#538d4e}
+.wk-key.present{background:#b59f3b}
+.wk-key.absent{background:#3a3a4a}
+.trivia-prog{display:flex;gap:5px;margin-bottom:14px}
+.trivia-prog-dot{height:6px;flex:1;border-radius:999px;background:rgba(255,255,255,.1)}
+.trivia-prog-dot.done{background:#ff9b62}
+.trivia-prog-dot.current{background:rgba(255,155,98,.5)}
+.hangman-figure{font-size:80px;text-align:center;margin:10px 0}
+.hangman-word{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:12px 0}
+.hangman-letter{font-size:24px;font-weight:700;border-bottom:2px solid rgba(255,255,255,.3);min-width:24px;text-align:center;padding:0 2px}
+.hangman-kb{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:14px}
+.h-key{background:rgba(255,255,255,.08);border:none;color:#fff;border-radius:8px;padding:8px 10px;font-weight:700;font-size:14px}
+.h-key:disabled{opacity:.3}
+.memory-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;max-width:340px;margin:0 auto}
+.memory-card{aspect-ratio:1;border-radius:12px;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.1);cursor:pointer;display:grid;place-items:center;font-size:28px;transition:.3s;transform-style:preserve-3d}
+.memory-card.flipped,.memory-card.matched{background:rgba(255,155,98,.12);border-color:rgba(255,155,98,.4)}
+.memory-card.matched{background:rgba(80,220,120,.1);border-color:rgba(80,220,120,.4)}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes cardIn{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn .35s ease}
+
+/* USER INFO BAR when logged in */
+.auth-status{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:12px;background:rgba(255,255,255,.04);font-size:13px}
+.auth-dot{width:8px;height:8px;border-radius:50%;background:#50dc78}
+.auth-dot.off{background:#666}
+
+@media(max-width:1180px){.app{grid-template-columns:1fr}.section-grid,.cards2{grid-template-columns:1fr}}
+@media(max-width:820px){.top,.filters,.random-box{display:grid;grid-template-columns:1fr}.results{grid-template-columns:repeat(3,minmax(0,1fr))}.profile-stats,.stats-grid,.upcoming-highlight{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.results{grid-template-columns:repeat(2,minmax(0,1fr))}.profile-stats{grid-template-columns:1fr}.top h2{font-size:24px}}
+</style>
+</head>
+<body>
+
+<!-- AUTH OVERLAY -->
+<div class="auth-screen show" id="authScreen">
+  <div class="auth-box">
+    <span class="auth-logo">🎬</span>
+    <h2 id="authTitle">Connexion</h2>
+    <p id="authSubtitle">Accède à ton espace cinéma personnel</p>
+    <div class="auth-form">
+      <input type="text" id="authName" placeholder="Pseudo (ex: CineMax42)" style="display:none">
+      <input type="email" id="authEmail" placeholder="Email">
+      <input type="password" id="authPass" placeholder="Mot de passe">
+      <div class="auth-err" id="authErr"></div>
+      <button class="btn primary" id="authSubmit" onclick="doAuth()" style="padding:14px">Se connecter</button>
+      <button class="btn soft" onclick="continueLocal()" style="padding:12px;font-size:13px">Continuer sans compte</button>
+    </div>
+    <div class="auth-switch">
+      <span id="authSwitchText">Pas encore de compte ?</span>
+      <button onclick="toggleAuthMode()" id="authSwitchBtn">S'inscrire</button>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand" id="brandLogo" onclick="goHome()">
+      <small id="brandBadge">🎬 Cinema App</small>
+      <h1>Film Finder</h1>
+      <p id="brandText"></p>
+    </div>
+    <div class="card profile">
+      <div class="profile-top">
+        <div class="avatar" id="avatar">🎬</div>
+        <div>
+          <div class="profile-name" id="profileName">Invité</div>
+          <div class="profile-mail" id="profileMail">local</div>
+        </div>
+      </div>
+      <div id="authStatusBar" class="auth-status" style="margin-bottom:12px">
+        <span class="auth-dot off" id="authDot"></span>
+        <span id="authStatusText">Non connecté</span>
+      </div>
+      <div class="profile-stats">
+        <div class="mini"><strong id="metaFav">0</strong><span id="metaFavLabel">Favoris</span></div>
+        <div class="mini"><strong id="metaWatched">0</strong><span id="metaWatchedLabel">Vus</span></div>
+        <div class="mini"><strong id="metaLang">FR</strong><span id="metaLangLabel">Langue</span></div>
+      </div>
+    </div>
+    <div class="nav">
+      <button class="active" data-page="home" id="navHome">🏠 Accueil</button>
+      <button data-page="search" id="navSearch">🔍 Recherche</button>
+      <button data-page="reviews" id="navReviews">⭐ Mes avis</button>
+      <button data-page="social" id="navSocial">👥 Abonnements</button>
+      <button data-page="random" id="navRandom">🎲 Aléatoire</button>
+      <button data-page="upcoming" id="navUpcoming">📅 Prochainement</button>
+      <button data-page="favorites" id="navFavorites">❤️ Favoris</button>
+      <button data-page="watched" id="navWatched">👁 Vus</button>
+      <button data-page="games" id="navGames">🎮 Jeux</button>
+      <button data-page="account" id="navAccount">👤 Compte</button>
+      <button data-page="settings" id="navSettings">⚙️ Réglages</button>
+    </div>
+    <div class="card profile"><p id="sidebarTip" style="font-size:13px"></p></div>
+  </aside>
+
+  <main class="main">
+    <div class="top">
+      <div><h2 id="topTitle">Ton hub cinéma</h2><p class="muted" id="topText"></p></div>
+      <div class="top-right">
+        <select class="ghost" id="languageSelect"><option value="fr">Français</option><option value="en">English</option></select>
+        <input class="ghost" id="quickName" placeholder="Nom du profil">
+        <button class="btn soft" id="quickSave">Mettre à jour</button>
+      </div>
+    </div>
+
+    <!-- HOME -->
+    <section class="page active" id="home">
+      <div class="section">
+        <div class="section-grid">
+          <div>
+            <div class="section-head">
+              <div><h3>🎬 Découvrir</h3><p>Explore les films populaires du moment</p></div>
+            </div>
+            <div class="filters">
+              <select class="ghost" id="homeGenre"></select>
+              <select class="ghost" id="homePlatform"></select>
+              <select class="ghost" id="homeSort"></select>
+              <button class="btn primary" onclick="loadHome()">Afficher</button>
+            </div>
+            <div id="homeResults"><div class="loading"><div class="spinner"></div>Chargement...</div></div>
+            <div class="pager" id="homePager"></div>
+          </div>
+          <div class="card stats" style="padding:22px">
+            <p class="muted">Vue d'ensemble</p>
+            <h3>Ton activité</h3>
+            <div class="stats-grid">
+              <div class="stat"><strong id="statFav">0</strong><span>Films favoris</span></div>
+              <div class="stat"><strong id="statWatched">0</strong><span>Films vus</span></div>
+              <div class="stat"><strong id="statFollowing">0</strong><span>Abonnements</span></div>
+              <div class="stat"><strong id="statLang">FR</strong><span>Langue</span></div>
+            </div>
+            <div class="panel" style="margin-top:16px">
+              <h4>Recommandés pour toi</h4>
+              <p class="subtle">Basé sur tes notes</p>
+              <div id="recommendations" class="recommend-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEARCH -->
+    <section class="page" id="search">
+      <div class="section">
+        <div class="section-head">
+          <div><h3>🔍 Recherche de films</h3><p>Cherche un film par son titre ou filtre par catégorie, plateforme, âge</p></div>
+        </div>
+        <div class="filters">
+          <input class="ghost" id="search" placeholder="Rechercher un titre...">
+          <select class="ghost" id="genre"></select>
+          <select class="ghost" id="platform"></select>
+          <select class="ghost" id="age"></select>
+          <select class="ghost" id="sort"></select>
+          <button class="btn primary" id="searchBtn">Rechercher</button>
+        </div>
+        <div id="results"></div>
+        <div class="pager" id="pager"></div>
+      </div>
+    </section>
+
+    <!-- REVIEWS -->
+    <section class="page" id="reviews">
+      <div class="section">
+        <div class="section-head">
+          <div><h3>⭐ Mes avis</h3><p>Tes notes et commentaires sur les films vus</p></div>
+          <span class="muted" id="reviewsCount">0 avis</span>
+        </div>
+        <div id="reviewsList" class="reviews-grid"></div>
+      </div>
+    </section>
+
+    <!-- SOCIAL -->
+    <section class="page" id="social">
+      <div class="section">
+        <div class="section-head">
+          <div><h3>👥 Communauté</h3><p>Suis des utilisateurs et lis leurs avis sur les films</p></div>
+        </div>
+        <div style="display:grid;gap:20px">
+          <div>
+            <h4 style="margin-bottom:12px">Trouver des utilisateurs</h4>
+            <div class="search-bar">
+              <input class="ghost" id="userSearch" placeholder="Chercher un pseudo...">
+              <button class="btn primary" onclick="searchUsers()">Chercher</button>
+            </div>
+            <div id="userSearchResults" class="users-grid"></div>
+          </div>
+          <div>
+            <h4 style="margin-bottom:12px">Mes abonnements (<span id="followingCount">0</span>)</h4>
+            <div id="followingList" class="users-grid"></div>
+          </div>
+          <div>
+            <h4 style="margin-bottom:12px">Avis de mes abonnements</h4>
+            <div id="followingReviews" class="follower-reviews"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RANDOM -->
+    <section class="page" id="random">
+      <div class="section">
+        <div class="section-head">
+          <div><h3>🎲 Film aléatoire</h3><p>Laisse le hasard décider ce que tu regardes ce soir</p></div>
+          <button class="btn primary" id="randomBtn">Générer un film</button>
+        </div>
+        <div id="randomResult"></div>
+      </div>
+    </section>
+
+    <!-- UPCOMING -->
+    <section class="page" id="upcoming">
+      <div class="section">
+        <div class="section-head">
+          <div><h3>📅 Prochainement</h3><p>Films à venir au cinéma</p></div>
+          <button class="btn soft" id="upcomingRefreshBtn" onclick="loadUpcoming()">Actualiser</button>
+        </div>
+        <div class="upcoming-highlight">
+          <div class="upcoming-box"><strong id="upcomingCount">0</strong><p class="muted">films chargés</p></div>
+          <div class="upcoming-box"><strong>30</strong><p class="muted">jours à venir</p></div>
+        </div>
+        <div id="upcomingList" class="results" style="margin-top:14px"></div>
+      </div>
+    </section>
+
+    <!-- FAVORITES -->
+    <section class="page" id="favorites">
+      <div class="section">
+        <div class="section-head">
+          <div><h3>❤️ Tes favoris</h3><p>Les films que tu veux garder à portée de main</p></div>
+          <span class="muted" id="favCount">0 film</span>
+        </div>
+        <div id="favList" class="results"></div>
+      </div>
+    </section>
+
+    <!-- WATCHED -->
+    <section class="page" id="watched">
+      <div class="section">
+        <div class="section-head">
+          <div><h3>👁 Déjà vus</h3><p>Ton historique avec notes sur 10</p></div>
+          <span class="muted" id="watchedCount">0 film</span>
+        </div>
+        <div id="watchedList" class="results"></div>
+      </div>
+    </section>
+
+    <!-- GAMES -->
+    <section class="page" id="games">
+      <div class="section">
+        <div class="section-head">
+          <div><h3>🎮 Jeux Cinéma</h3><p>Des jeux autour des films pour les vrais cinéphiles</p></div>
+        </div>
+        <div class="games-grid">
+          <div class="game-card" style="--gc:rgba(255,97,85,.12)" onclick="openGame('quiz')">
+            <span class="game-badge">Populaire</span>
+            <span class="game-icon">🎬</span>
+            <h4>Quiz Cinéma</h4>
+            <p>10 questions sur les films, acteurs et réalisateurs</p>
+          </div>
+          <div class="game-card" style="--gc:rgba(97,150,255,.12)" onclick="openGame('wordle')">
+            <span class="game-icon">🔤</span>
+            <h4>Ciné-Wordle</h4>
+            <p>Devine le titre d'un film en 6 essais</p>
+          </div>
+          <div class="game-card" style="--gc:rgba(255,200,50,.12)" onclick="openGame('memory')">
+            <span class="game-icon">🃏</span>
+            <h4>Memory Affiches</h4>
+            <p>Retrouve les paires d'affiches de films</p>
+          </div>
+          <div class="game-card" style="--gc:rgba(120,220,120,.12)" onclick="openGame('hangman')">
+            <span class="game-icon">🎭</span>
+            <h4>Pendu Ciné</h4>
+            <p>Trouve le titre du film lettre par lettre</p>
+          </div>
+          <div class="game-card" style="--gc:rgba(200,100,255,.12)" onclick="openGame('guess')">
+            <span class="game-icon">🕵️</span>
+            <h4>Devine le Film</h4>
+            <p>Retrouve le film à partir de sa description</p>
+          </div>
+          <div class="game-card" style="--gc:rgba(255,150,50,.12)" onclick="openGame('year')">
+            <span class="game-icon">📅</span>
+            <h4>Quelle Année ?</h4>
+            <p>Devine l'année de sortie d'un film</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ACCOUNT -->
+    <section class="page" id="account">
+      <div class="section">
+        <div class="section-head">
+          <div><h3>👤 Compte</h3><p>Gérer ton profil et tes données</p></div>
+        </div>
+        <div class="cards2">
+          <div class="setting">
+            <h4>Profil</h4>
+            <p>Ton identité sur Film Finder</p>
+            <div class="stack" style="margin-top:12px">
+              <input class="ghost" id="accountName" placeholder="Nom du compte">
+              <input class="ghost" id="accountEmail" placeholder="Email">
+              <button class="btn primary" id="saveAccountBtn" onclick="saveAccount()">Enregistrer le profil</button>
+            </div>
+          </div>
+          <div class="setting">
+            <h4>Statut du compte</h4>
+            <div class="stack" style="margin-top:12px">
+              <div class="muted">Plan : <strong style="color:#fff" id="planName">Local</strong></div>
+              <div class="muted">Membre depuis : <strong style="color:#fff" id="memberSince">—</strong></div>
+              <div id="accountActions" style="display:grid;gap:8px;margin-top:8px">
+                <button class="btn success" id="loginFromAccount" onclick="showAuth()">Se connecter / Créer un compte</button>
+                <button class="btn danger" id="logoutBtn" onclick="doLogout()" style="display:none">Se déconnecter</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="page" id="settings">
+      <div class="section">
+        <div class="section-head"><div><h3>⚙️ Réglages</h3><p>Gère tes données et la langue</p></div></div>
+        <div class="cards2">
+          <div class="setting"><h4>Langue</h4><p>Français / English</p><button class="btn soft" id="toggleLangBtn" onclick="toggleLang()">Passer en anglais</button></div>
+          <div class="setting"><h4>Réinitialiser le profil</h4><p>Efface seulement le profil local</p><button class="btn danger" id="resetBtn" onclick="resetAccount()">Effacer le profil</button></div>
+          <div class="setting"><h4>Favoris</h4><p id="favStat"></p><button class="btn danger" id="clearFavBtn" onclick="clearFavorites()">Tout supprimer</button></div>
+          <div class="setting"><h4>Films vus</h4><p id="watchedStat"></p><button class="btn danger" id="clearWatchedBtn" onclick="clearWatched()">Tout supprimer</button></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- RATING MODAL -->
+<div class="modal-backdrop" id="ratingModal">
+  <div class="modal">
+    <h3 id="modalTitle">Donner une note</h3>
+    <p id="modalText" style="color:#9eb0cf;margin-bottom:8px">Choisis une note sur 10</p>
+    <div class="stars" id="stars"></div>
+    <div id="ratingValue" class="muted" style="text-align:center;min-height:24px;font-size:18px;font-weight:700"></div>
+    <div style="margin-top:12px">
+      <p style="font-size:13px;color:#9eb0cf;margin-bottom:8px">Ton avis (optionnel) :</p>
+      <textarea class="review-text-area" id="reviewInput" placeholder="Qu'as-tu pensé de ce film ?"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn soft" id="cancelBtn" onclick="closeModal()">Annuler</button>
+      <button class="btn primary" id="confirmBtn" onclick="confirmRating()">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<!-- GAME MODAL -->
+<div class="modal-backdrop" id="gameModal">
+  <div class="game-modal" id="gameContent"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// =================== CONFIG ===================
+const API_KEY = "dbf9646c1291b4d328ae1ba516389be2";
+const IMG = "https://image.tmdb.org/t/p/w500";
+const ACCOUNT_KEY = "filmFinderAccount";
+const SUPABASE_URL = "https://etppwwnveoroaladwxxj.supabase.co";
+const SUPABASE_KEY = "sb_publishable_swwApRj5nxVueO5Agjc9Zg_KHQjIdUx";
+
+// =================== STATE ===================
+let favorites = JSON.parse(localStorage.getItem("fav")) || [];
+let watched = JSON.parse(localStorage.getItem("watched")) || [];
+let account = JSON.parse(localStorage.getItem(ACCOUNT_KEY)) || {
+  name: "Invité", email: "", language: "fr",
+  memberSince: new Date().toLocaleDateString("fr-FR")
+};
+let lang = account.language || "fr";
+let page = 1, totalPages = 1, homePage = 1, homeTotalPages = 1;
+let pending = null, rating = 0, randomCurrent = null;
+let currentPageId = "home", upcomingCache = [];
+let currentUser = null; // Supabase user
+let following = JSON.parse(localStorage.getItem("following")) || [];
+let followingReviewsCache = [];
+let authMode = "login"; // login | register
+
+// =================== SUPABASE CLIENT (Vanilla) ===================
+async function sbRequest(method, path, body = null, token = null) {
+  const headers = {
+    "Content-Type": "application/json",
+    "apikey": SUPABASE_KEY,
+    "Authorization": `Bearer ${token || SUPABASE_KEY}`
+  };
+  const opts = { method, headers };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(SUPABASE_URL + path, opts);
+  return res.json();
+}
+
+async function sbAuth(email, password, mode) {
+  const ep = mode === "register"
+    ? "/auth/v1/signup"
+    : "/auth/v1/token?grant_type=password";
+  const res = await fetch(SUPABASE_URL + ep, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY },
+    body: JSON.stringify({ email, password })
+  });
+  return res.json();
+}
+
+async function sbLogout(token) {
+  await fetch(SUPABASE_URL + "/auth/v1/logout", {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${token}`, "apikey": SUPABASE_KEY }
+  });
+}
+
+async function sbGetProfile(userId, token) {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=*`,
+    { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` } }
+  );
+  const data = await res.json();
+  return data[0] || null;
+}
+
+async function sbUpsertProfile(userId, data, token) {
+  await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
+    method: "POST",
+    headers: {
+      "apikey": SUPABASE_KEY,
+      "Authorization": `Bearer ${token}`,
+      "Content-Type": "application/json",
+      "Prefer": "resolution=merge-duplicates"
+    },
+    body: JSON.stringify({ id: userId, ...data })
+  });
+}
+
+async function sbSaveWatched(userId, token) {
+  await fetch(`${SUPABASE_URL}/rest/v1/watched_movies`, {
+    method: "POST",
+    headers: {
+      "apikey": SUPABASE_KEY,
+      "Authorization": `Bearer ${token}`,
+      "Content-Type": "application/json",
+      "Prefer": "resolution=merge-duplicates"
+    },
+    body: JSON.stringify(watched.map(m => ({
+      user_id: userId,
+      movie_id: m.id,
+      movie_data: m,
+      user_rating: m.userRating || 0,
+      user_review: m.userReview || ""
+    })))
+  });
+}
+
+async function sbGetAllUsers(token) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=id,username,email&limit=50`, {
+    headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` }
+  });
+  return res.json();
+}
+
+async function sbGetUserReviews(userId, token) {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/watched_movies?user_id=eq.${userId}&select=*&order=created_at.desc&limit=20`,
+    { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` } }
+  );
+  return res.json();
+}
+
+// =================== AUTH ===================
+function showAuth() {
+  document.getElementById("authScreen").classList.add("show");
+}
+function hideAuth() {
+  document.getElementById("authScreen").classList.remove("show");
+}
+
+function toggleAuthMode() {
+  authMode = authMode === "login" ? "register" : "login";
+  const isReg = authMode === "register";
+  document.getElementById("authTitle").textContent = isReg ? "Créer un compte" : "Connexion";
+  document.getElementById("authSubtitle").textContent = isReg ? "Rejoins la communauté Film Finder" : "Accède à ton espace cinéma personnel";
+  document.getElementById("authSubmit").textContent = isReg ? "Créer mon compte" : "Se connecter";
+  document.getElementById("authSwitchText").textContent = isReg ? "Déjà un compte ?" : "Pas encore de compte ?";
+  document.getElementById("authSwitchBtn").textContent = isReg ? "Se connecter" : "S'inscrire";
+  document.getElementById("authName").style.display = isReg ? "block" : "none";
+  document.getElementById("authErr").textContent = "";
+}
+
+async function doAuth() {
+  const email = document.getElementById("authEmail").value.trim();
+  const pass = document.getElementById("authPass").value;
+  const name = document.getElementById("authName").value.trim();
+  const errEl = document.getElementById("authErr");
+  errEl.textContent = "";
+  if (!email || !pass) { errEl.textContent = "Email et mot de passe requis"; return; }
+  document.getElementById("authSubmit").textContent = "Chargement...";
+  try {
+    const data = await sbAuth(email, pass, authMode);
+    if (data.error || data.msg) {
+      errEl.textContent = data.error_description || data.msg || "Erreur";
+      document.getElementById("authSubmit").textContent = authMode === "register" ? "Créer mon compte" : "Se connecter";
+      return;
+    }
+    currentUser = data.user || data;
+    currentUser.access_token = data.access_token;
+    if (authMode === "register" && name) {
+      await sbUpsertProfile(currentUser.id, { username: name, email }, currentUser.access_token);
+    }
+    account.name = name || email.split("@")[0];
+    account.email = email;
+    account.memberSince = account.memberSince || new Date().toLocaleDateString("fr-FR");
+    saveAll();
+    updateAuthUI();
+    hideAuth();
+    toast(authMode === "register" ? "🎉 Compte créé ! Bienvenue !" : "✅ Connecté !");
+  } catch (e) {
+    errEl.textContent = "Erreur réseau. Vérifier la connexion.";
+    document.getElementById("authSubmit").textContent = authMode === "register" ? "Créer mon compte" : "Se connecter";
+  }
+}
+
+function continueLocal() {
+  hideAuth();
+  toast("Mode local activé");
+}
+
+async function doLogout() {
+  if (currentUser?.access_token) await sbLogout(currentUser.access_token);
+  currentUser = null;
+  updateAuthUI();
+  toast("Déconnecté");
+}
+
+function updateAuthUI() {
+  const connected = !!currentUser;
+  document.getElementById("authDot").className = "auth-dot" + (connected ? "" : " off");
+  document.getElementById("authStatusText").textContent = connected ? `Connecté : ${account.name}` : "Non connecté";
+  document.getElementById("planName").textContent = connected ? "Compte en ligne" : "Local";
+  document.getElementById("logoutBtn").style.display = connected ? "block" : "none";
+  document.getElementById("loginFromAccount").style.display = connected ? "none" : "block";
+  renderProfile();
+}
+
+// =================== CORE ===================
+const $ = id => document.getElementById(id);
+const esc = s => String(s || "").replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+const region = () => lang === "fr" ? "FR" : "US";
+const apiLanguage = () => lang === "fr" ? "fr-FR" : "en-US";
+
+const genreOptions = [["","Toutes catégories"],["28","Action"],["12","Aventure"],["16","Animation"],["35","Comédie"],["80","Crime"],["99","Documentaire"],["18","Drame"],["14","Fantastique"],["27","Horreur"],["10749","Romance"],["878","Sci-Fi"],["53","Thriller"]];
+const platformOptions = [["","Toutes plateformes"],["8","Netflix"],["9","Prime Video"],["337","Disney+"],["350","Apple TV+"]];
+const ageOptions = [["","Tout public"],["0","0+"],["6","6+"],["12","12+"],["16","16+"],["18","18+"]];
+const sortOptions = [["popularity.desc","Popularité"],["vote_average.desc","Note"],["release_date.desc","Plus récent"]];
+const genreNames = {28:"Action",12:"Aventure",16:"Animation",35:"Comédie",80:"Crime",99:"Documentaire",18:"Drame",14:"Fantastique",27:"Horreur",10749:"Romance",878:"Sci-Fi",53:"Thriller"};
+
+function fillSelect(id, data) {
+  const el = $(id); if (!el) return;
+  const v = el.value;
+  el.innerHTML = data.map(([val, label]) => `<option value="${val}">${label}</option>`).join("");
+  el.value = v || data[0][0];
+}
+
+function saveAll() {
+  localStorage.setItem("fav", JSON.stringify(favorites));
+  localStorage.setItem("watched", JSON.stringify(watched));
+  localStorage.setItem(ACCOUNT_KEY, JSON.stringify(account));
+  localStorage.setItem("following", JSON.stringify(following));
+  if (currentUser?.access_token) sbSaveWatched(currentUser.id, currentUser.access_token).catch(() => {});
+  renderProfile();
+  renderStats();
+  updateSettings();
+}
+
+async function fetchJson(url) {
+  const res = await fetch(url);
+  return res.json();
+}
+
+function toast(m) {
+  const t = $("toast");
+  t.textContent = m;
+  t.classList.add("show");
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove("show"), 2400);
+}
+
+function showPage(id) {
+  currentPageId = id;
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".nav button").forEach(b => b.classList.toggle("active", b.dataset.page === id));
+  $(id).classList.add("active");
+  if (id === "favorites") renderFavorites();
+  if (id === "watched") renderWatched();
+  if (id === "reviews") renderReviews();
+  if (id === "social") renderSocial();
+  if (id === "settings") updateSettings();
+  if (id === "upcoming" && !upcomingCache.length) loadUpcoming();
+  if (id === "home") renderHomeStats();
+}
+
+function goHome() {
+  showPage("home");
+}
+
+// =================== PROFILE ===================
+function renderProfile() {
+  const n = account.name || "Invité";
+  $("profileName").textContent = n;
+  $("profileMail").textContent = account.email || "local";
+  $("avatar").textContent = n.split(" ").map(x => x[0]).join("").slice(0, 2).toUpperCase() || "🎬";
+  $("quickName").value = n;
+  if ($("accountName")) $("accountName").value = n;
+  if ($("accountEmail")) $("accountEmail").value = account.email || "";
+  if ($("memberSince")) $("memberSince").textContent = account.memberSince || "—";
+  $("metaLang").textContent = lang.toUpperCase();
+}
+
+function renderStats() {
+  $("metaFav").textContent = favorites.length;
+  $("metaWatched").textContent = watched.length;
+  $("statFav").textContent = favorites.length;
+  $("statWatched").textContent = watched.length;
+  $("statFollowing").textContent = following.length;
+  $("statLang").textContent = lang.toUpperCase();
+  $("upcomingCount").textContent = upcomingCache.length;
+}
+
+function renderHomeStats() {
+  renderStats();
+  renderRecommendations();
+}
+
+function saveAccount() {
+  account.name = $("accountName")?.value.trim() || $("quickName").value.trim() || "Film Lover";
+  account.email = $("accountEmail")?.value.trim() || "";
+  account.language = $("languageSelect").value;
+  account.memberSince = account.memberSince || new Date().toLocaleDateString("fr-FR");
+  lang = account.language;
+  fillSelects();
+  saveAll();
+  updateAuthUI();
+  toast("✅ Profil mis à jour");
+}
+
+function resetAccount() {
+  if (!confirm("Effacer le profil local ?")) return;
+  account = { name: "Invité", email: "", language: "fr", memberSince: new Date().toLocaleDateString("fr-FR") };
+  lang = "fr";
+  fillSelects();
+  saveAll();
+  toast("Profil réinitialisé");
+}
+
+function toggleLang() {
+  lang = lang === "fr" ? "en" : "fr";
+  account.language = lang;
+  $("toggleLangBtn").textContent = lang === "fr" ? "Passer en anglais" : "Switch to French";
+  $("languageSelect").value = lang;
+  saveAll();
+  toast(lang === "fr" ? "Langue : Français" : "Language: English");
+}
+
+function updateSettings() {
+  $("favStat").textContent = favorites.length + " film(s) sauvegardé(s)";
+  $("watchedStat").textContent = watched.length + " film(s) enregistré(s)";
+}
+
+function clearFavorites() {
+  if (!confirm("Supprimer tous les favoris ?")) return;
+  favorites = [];
+  saveAll();
+  renderFavorites();
+  toast("Favoris supprimés");
+}
+
+function clearWatched() {
+  if (!confirm("Supprimer l'historique des films vus ?")) return;
+  watched = [];
+  saveAll();
+  renderWatched();
+  renderReviews();
+  toast("Historique supprimé");
+}
+
+// =================== GENRE & HELPERS ===================
+function genreLabel(ids) {
+  const list = (ids || []).slice(0, 2).map(id => genreNames[id]).filter(Boolean);
+  return list.length ? list.join(" / ") : "Cinéma";
+}
+
+async function getMovieProviders(id) {
+  try {
+    const data = await fetchJson(`https://api.themoviedb.org/3/movie/${id}/watch/providers?api_key=${API_KEY}`);
+    const box = data.results?.[region()];
+    return box?.flatrate || box?.rent || box?.buy || [];
+  } catch { return []; }
+}
+
+async function getMovieDetails(id) {
+  return fetchJson(`https://api.themoviedb.org/3/movie/${id}?api_key=${API_KEY}&language=${apiLanguage()}&append_to_response=release_dates,watch/providers`);
+}
+
+function extractAge(details) {
+  const rows = details?.release_dates?.results || [];
+  const local = rows.find(x => x.iso_3166_1 === region());
+  return local?.release_dates?.find(x => x.certification)?.certification || "?";
+}
+
+function extractProvidersFromDetails(details) {
+  const box = details?.["watch/providers"]?.results?.[region()];
+  const providers = box?.flatrate || box?.rent || box?.buy || [];
+  return providers.map(p => p.provider_name);
+}
+
+function countLabel(n) {
+  return `${n} ${n > 1 ? "films" : "film"}`;
+}
+
+// =================== MOVIE CARD ===================
+function movieCard(movie, mode = "", i = 0) {
+  const fav = favorites.some(x => x.id === movie.id);
+  const seenEntry = watched.find(x => x.id === movie.id);
+  const seen = !!seenEntry;
+  const poster = movie.poster_path ? `${IMG}${movie.poster_path}` : "";
+  const year = movie.release_date ? movie.release_date.slice(0, 4) : "?";
+  const score = movie.vote_average ? movie.vote_average.toFixed(1) : "?";
+  const payload = encodeURIComponent(JSON.stringify(movie));
+  const userRating = seenEntry?.userRating || movie.userRating || 0;
+  const stars = userRating ? "★".repeat(Math.round(userRating / 2)) + "☆".repeat(5 - Math.round(userRating / 2)) : "";
+
+  return `<div class="movie">
+    ${poster ? `<img src="${poster}" alt="${esc(movie.title)}" loading="lazy">` : `<div class="no-poster">FILM</div>`}
+    <h4 title="${esc(movie.title)}">${esc(movie.title)}</h4>
+    <div class="meta"><span class="score">⭐ ${score}</span><span>${year}</span></div>
+    <div class="meta"><span>${genreLabel(movie.genre_ids)}</span></div>
+    ${(mode === "watched" || seen) && userRating ? `<div class="meta"><span style="color:#ffd66d;font-size:11px">${stars} ${userRating}/10</span></div>` : ""}
+    <div class="movie-actions">
+      <button class="${fav ? "added" : ""}" onclick="toggleFav('${payload}',this)">${fav ? "❤️ Favori" : "❤ Ajouter"}</button>
+      ${mode === "favorites" ? `<button onclick="removeFav(${i})">🗑 Retirer</button>`
+      : mode === "watched" ? `<button onclick="removeWatched(${i})">🗑 Retirer</button>`
+      : `<button class="${seen ? "added" : ""}" onclick="openModal('${payload}')">${seen ? "✏️ Modifier" : "👁 Vu"}</button>`}
+    </div>
+  </div>`;
+}
+
+function renderResults(list, id) {
+  if (!list.length) {
+    $(id).innerHTML = `<div class="empty"><p>${id === "favList" ? "Aucun favori pour l'instant" : id === "watchedList" ? "Aucun film vu" : "Aucun film trouvé"}</p></div>`;
+    return;
+  }
+  $(id).innerHTML = `<div class="results">${list.map((m, i) => movieCard(m, id === "favList" ? "favorites" : id === "watchedList" ? "watched" : "", i)).join("")}</div>`;
+}
+
+// =================== HOME ===================
+let homePageNum = 1;
+function fillSelects() {
+  fillSelect("homeGenre", genreOptions);
+  fillSelect("homePlatform", platformOptions);
+  fillSelect("homeSort", sortOptions);
+  fillSelect("genre", genreOptions);
+  fillSelect("platform", platformOptions);
+  fillSelect("age", ageOptions);
+  fillSelect("sort", sortOptions);
+}
+
+async function loadHome(p = 1) {
+  homePageNum = p;
+  const genre = $("homeGenre")?.value || "";
+  const platform = $("homePlatform")?.value || "";
+  const sort = $("homeSort")?.value || "popularity.desc";
+  $("homeResults").innerHTML = `<div class="loading"><div class="spinner"></div>Chargement...</div>`;
+  $("homePager").style.display = "none";
+  let url = `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&language=${apiLanguage()}&sort_by=${sort}&page=${p}&vote_count.gte=50`;
+  if (genre) url += `&with_genres=${genre}`;
+  if (platform) url += `&with_watch_providers=${platform}&watch_region=${region()}`;
+  try {
+    const data = await fetchJson(url);
+    const list = data.results || [];
+    homeTotalPages = Math.min(data.total_pages || 1, 500);
+    if (!list.length) { $("homeResults").innerHTML = `<div class="empty"><p>Aucun film trouvé</p></div>`; return; }
+    $("homeResults").innerHTML = `<div class="results">${list.map((m, i) => movieCard(m, "", i)).join("")}</div>`;
+    renderHomePager();
+    renderStats();
+  } catch {
+    $("homeResults").innerHTML = `<div class="empty"><p>Erreur de chargement</p></div>`;
+  }
+}
+
+function renderHomePager() {
+  if (homeTotalPages <= 1) { $("homePager").style.display = "none"; return; }
+  $("homePager").style.display = "flex";
+  $("homePager").innerHTML = `
+    <button onclick="loadHome(1)" ${homePageNum===1?"disabled":""}>«</button>
+    <button onclick="loadHome(${homePageNum-1})" ${homePageNum===1?"disabled":""}>‹ Préc</button>
+    <span class="muted">${homePageNum} / ${homeTotalPages}</span>
+    <button onclick="loadHome(${homePageNum+1})" ${homePageNum===homeTotalPages?"disabled":""}>Suiv ›</button>
+    <button onclick="loadHome(${homeTotalPages})" ${homePageNum===homeTotalPages?"disabled":""}>»</button>`;
+}
+
+// =================== SEARCH ===================
+async function searchMovies(p = 1) {
+  page = p;
+  const q = $("search").value.trim();
+  const genre = $("genre").value;
+  const platform = $("platform").value;
+  const age = $("age").value;
+  const sort = $("sort").value;
+  $("results").innerHTML = `<div class="loading"><div class="spinner"></div>Recherche...</div>`;
+  $("pager").style.display = "none";
+  let url = q
+    ? `https://api.themoviedb.org/3/search/movie?api_key=${API_KEY}&query=${encodeURIComponent(q)}&page=${p}&language=${apiLanguage()}`
+    : `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&language=${apiLanguage()}&sort_by=${sort}&page=${p}`;
+  if (!q) {
+    if (genre) url += `&with_genres=${genre}`;
+    if (platform) url += `&with_watch_providers=${platform}&watch_region=${region()}`;
+    if (age) url += `&certification_country=${region()}&certification.lte=${age}`;
+  }
+  try {
+    const data = await fetchJson(url);
+    let list = data.results || [];
+    if (q && genre) list = list.filter(m => (m.genre_ids || []).includes(Number(genre)));
+    totalPages = Math.min(data.total_pages || 1, 500);
+    renderResults(list, "results");
+    renderPager();
+  } catch {
+    $("results").innerHTML = `<div class="empty"><p>Erreur de chargement. Vérifie ta connexion.</p></div>`;
+  }
+}
+
+function renderPager() {
+  if (totalPages <= 1) { $("pager").style.display = "none"; return; }
+  $("pager").style.display = "flex";
+  $("pager").innerHTML = `
+    <button onclick="searchMovies(1)" ${page===1?"disabled":""}>«</button>
+    <button onclick="searchMovies(${page-1})" ${page===1?"disabled":""}>‹</button>
+    <span class="muted">${page} / ${totalPages}</span>
+    <button onclick="searchMovies(${page+1})" ${page===totalPages?"disabled":""}>›</button>
+    <button onclick="searchMovies(${totalPages})" ${page===totalPages?"disabled":""}>»</button>`;
+}
+
+// =================== FAVORITES ===================
+function toggleFav(payload, btn) {
+  const movie = JSON.parse(decodeURIComponent(payload));
+  const i = favorites.findIndex(x => x.id === movie.id);
+  if (i < 0) {
+    favorites.push(movie);
+    btn.textContent = "❤️ Favori";
+    btn.classList.add("added");
+    toast("❤️ Ajouté aux favoris");
+  } else {
+    favorites.splice(i, 1);
+    btn.textContent = "❤ Ajouter";
+    btn.classList.remove("added");
+    toast("Retiré des favoris");
+  }
+  saveAll();
+  if (currentPageId === "favorites") renderFavorites();
+}
+
+function addFavRandom(btn) {
+  const i = favorites.findIndex(x => x.id === randomCurrent.id);
+  if (i < 0) {
+    favorites.push(randomCurrent);
+    btn.textContent = "❤️ Dans tes favoris";
+    btn.classList.add("added");
+    saveAll();
+    toast("❤️ Ajouté aux favoris");
+  }
+}
+
+function renderFavorites() {
+  $("favCount").textContent = countLabel(favorites.length);
+  renderResults(favorites, "favList");
+}
+
+function removeFav(i) {
+  favorites.splice(i, 1);
+  saveAll();
+  renderFavorites();
+  toast("Retiré des favoris");
+}
+
+// =================== WATCHED / RATING ===================
+function openModal(payload) {
+  pending = JSON.parse(decodeURIComponent(payload));
+  const existingEntry = watched.find(x => x.id === pending.id);
+  rating = existingEntry?.userRating || 0;
+  $("modalTitle").textContent = pending.title;
+  $("reviewInput").value = existingEntry?.userReview || "";
+  $("ratingModal").classList.add("open");
+  drawStars();
+  $("ratingValue").textContent = rating ? `${rating}/10` : "";
+}
+
+function drawStars() {
+  $("stars").innerHTML = Array.from({ length: 10 }, (_, i) =>
+    `<span class="${i < rating ? "active" : ""}" data-v="${i + 1}">★</span>`
+  ).join("");
+  document.querySelectorAll("#stars span").forEach(s => {
+    s.onmouseenter = () => paint(+s.dataset.v);
+    s.onclick = () => {
+      rating = +s.dataset.v;
+      paint(rating);
+      $("ratingValue").textContent = `${rating}/10`;
+    };
+  });
+  $("stars").onmouseleave = () => paint(rating);
+}
+
+function paint(n) {
+  document.querySelectorAll("#stars span").forEach(s => s.classList.toggle("active", +s.dataset.v <= n));
+}
+
+function closeModal() {
+  $("ratingModal").classList.remove("open");
+  pending = null;
+  rating = 0;
+}
+
+function confirmRating() {
+  if (!pending) return;
+  if (!rating) { toast("⚠️ Choisis au moins une étoile"); return; }
+  const review = $("reviewInput").value.trim();
+  const i = watched.findIndex(x => x.id === pending.id);
+  if (i >= 0) watched.splice(i, 1);
+  watched.push({ ...pending, userRating: rating, userReview: review });
+  saveAll();
+  closeModal();
+  toast("✅ Film noté !");
+  if (currentPageId === "watched") renderWatched();
+  if (currentPageId === "reviews") renderReviews();
+}
+
+function renderWatched() {
+  $("watchedCount").textContent = countLabel(watched.length);
+  renderResults(watched, "watchedList");
+}
+
+function removeWatched(i) {
+  watched.splice(i, 1);
+  saveAll();
+  renderWatched();
+  renderReviews();
+  toast("Film retiré de l'historique");
+}
+
+// =================== REVIEWS ===================
+function renderReviews() {
+  $("reviewsCount").textContent = watched.length + " avis";
+  if (!watched.length) {
+    $("reviewsList").innerHTML = `<div class="empty"><p>Note quelques films pour voir tes avis ici !</p></div>`;
+    return;
+  }
+  const sorted = [...watched].sort((a, b) => (b.userRating || 0) - (a.userRating || 0));
+  $("reviewsList").innerHTML = sorted.map(m => {
+    const poster = m.poster_path ? `${IMG}${m.poster_path}` : "";
+    const r = m.userRating || 0;
+    const starsHtml = Array.from({ length: 10 }, (_, i) =>
+      `<span class="review-star${i < r ? "" : " empty"}">★</span>`
+    ).join("");
+    return `<div class="review-card fade-in">
+      ${poster ? `<img src="${poster}" alt="${esc(m.title)}">` : `<div class="no-poster-sm">FILM</div>`}
+      <div>
+        <h4 style="font-size:16px;margin-bottom:4px">${esc(m.title)}</h4>
+        <div style="font-size:12px;color:#9eb0cf;margin-bottom:6px">${m.release_date ? m.release_date.slice(0, 4) : ""} · ${genreLabel(m.genre_ids)}</div>
+        <div class="review-stars">${starsHtml} <span style="font-size:13px;color:#ffd66d;margin-left:6px;font-weight:700">${r}/10</span></div>
+        ${m.userReview ? `<div class="review-note">"${esc(m.userReview)}"</div>` : `<div style="font-size:12px;color:#5a7090;font-style:italic">Aucun commentaire</div>`}
+        <div style="margin-top:8px;display:flex;gap:8px">
+          <button class="btn soft" style="font-size:12px;padding:6px 10px" onclick="openModal('${encodeURIComponent(JSON.stringify(m))}')">✏️ Modifier</button>
+          <button class="btn danger" style="font-size:12px;padding:6px 10px" onclick="removeWatched(${watched.indexOf(m)})">🗑</button>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// =================== RECOMMENDATIONS ===================
+async function renderRecommendations() {
+  if (!watched.length) {
+    $("recommendations").innerHTML = `<div class="subtle" style="padding:10px;color:#9eb0cf">Note quelques films pour lancer les recommandations.</div>`;
+    return;
+  }
+  const weights = {};
+  watched.forEach(m => {
+    const score = (m.userRating || 0) - 5;
+    (m.genre_ids || []).forEach(id => weights[id] = (weights[id] || 0) + score);
+  });
+  const genres = Object.entries(weights).sort((a, b) => b[1] - a[1]).filter(([, v]) => v > 0).slice(0, 3).map(([id]) => id);
+  if (!genres.length) {
+    $("recommendations").innerHTML = `<div class="subtle" style="padding:10px;color:#9eb0cf">Notes plus élevées = meilleures recommandations</div>`;
+    return;
+  }
+  try {
+    const data = await fetchJson(`https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&language=${apiLanguage()}&sort_by=vote_average.desc&vote_count.gte=200&with_genres=${genres.join(",")}`);
+    const blocked = new Set([...favorites, ...watched].map(x => x.id));
+    const picks = (data.results || []).filter(x => !blocked.has(x.id)).slice(0, 4);
+    if (!picks.length) { $("recommendations").innerHTML = `<div class="subtle" style="padding:10px;color:#9eb0cf">Aucune recommandation disponible.</div>`; return; }
+    $("recommendations").innerHTML = picks.map(movie => `
+      <div class="recommend-item">
+        <div>${movie.poster_path ? `<img src="${IMG}${movie.poster_path}" alt="${esc(movie.title)}">` : `<div class="no-poster">FILM</div>`}</div>
+        <div>
+          <h5>${esc(movie.title)}</h5>
+          <div class="subtle" style="font-size:12px">${genreLabel(movie.genre_ids)}</div>
+          <div style="font-size:11px;color:#ffd66d;margin-top:3px">⭐ ${movie.vote_average?.toFixed(1) || "?"}</div>
+          <div class="inline-actions" style="margin-top:6px">
+            <button class="btn soft" style="font-size:11px;padding:5px 8px" onclick="toggleFav('${encodeURIComponent(JSON.stringify(movie))}',this)">❤ Ajouter</button>
+            <button class="btn soft" style="font-size:11px;padding:5px 8px" onclick="openModal('${encodeURIComponent(JSON.stringify(movie))}')">👁 Vu</button>
+          </div>
+        </div>
+      </div>`).join("");
+  } catch {
+    $("recommendations").innerHTML = `<div class="subtle" style="padding:10px;color:#9eb0cf">Erreur de chargement</div>`;
+  }
+}
+
+// =================== RANDOM ===================
+async function randomMovie() {
+  $("randomResult").innerHTML = `<div class="loading"><div class="spinner"></div>Recherche d'un film...</div>`;
+  try {
+    const data = await fetchJson(`https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&language=${apiLanguage()}&page=${Math.floor(Math.random() * 40) + 1}&sort_by=popularity.desc`);
+    const movie = data.results[Math.floor(Math.random() * data.results.length)];
+    const details = await getMovieDetails(movie.id);
+    randomCurrent = movie;
+    const fav = favorites.some(x => x.id === movie.id);
+    const seen = watched.some(x => x.id === movie.id);
+    const poster = movie.poster_path ? `${IMG}${movie.poster_path}` : "";
+    const providers = extractProvidersFromDetails(details);
+    const genres = (details.genres || []).slice(0, 3).map(g => g.name);
+    const age = extractAge(details);
+    $("randomResult").innerHTML = `
+      <div class="random-box random-card">
+        ${poster ? `<img src="${poster}" alt="${esc(movie.title)}">` : `<div class="no-poster">FILM</div>`}
+        <div>
+          <h3>${esc(movie.title)}</h3>
+          <div class="tags">
+            <span class="tag">🎭 ${esc(genres.join(", ") || genreLabel(movie.genre_ids))}</span>
+            <span class="tag">🔞 ${esc(age)}</span>
+            <span class="tag">📺 ${esc((providers.slice(0, 3).join(", ")) || "Pas de plateforme connue")}</span>
+          </div>
+          <div class="meta"><span class="score">⭐ ${movie.vote_average?.toFixed(1) || "?"}</span><span>Sortie : ${movie.release_date || "?"}</span></div>
+          <p class="muted" style="line-height:1.6;margin:12px 0 16px">${esc(movie.overview || "...")}</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn primary" onclick="randomMovie()">🎲 Autre film</button>
+            <button class="btn soft ${fav ? "added" : ""}" onclick="addFavRandom(this)">${fav ? "❤️ Dans tes favoris" : "❤ Ajouter aux favoris"}</button>
+            <button class="btn soft ${seen ? "added" : ""}" onclick="openModal('${encodeURIComponent(JSON.stringify(movie))}')">${seen ? "✏️ Modifier la note" : "👁 Marquer comme vu"}</button>
+          </div>
+        </div>
+      </div>`;
+  } catch {
+    $("randomResult").innerHTML = `<div class="empty"><p>Erreur lors du chargement.</p></div>`;
+  }
+}
+
+// =================== UPCOMING ===================
+async function loadUpcoming() {
+  $("upcomingList").innerHTML = `<div class="loading"><div class="spinner"></div>Chargement...</div>`;
+  try {
+    const data = await fetchJson(`https://api.themoviedb.org/3/movie/upcoming?api_key=${API_KEY}&language=${apiLanguage()}&region=${region()}&page=1`);
+    upcomingCache = data.results || [];
+    $("upcomingCount").textContent = upcomingCache.length;
+    if (!upcomingCache.length) { $("upcomingList").innerHTML = `<div class="empty"><p>Aucun film trouvé</p></div>`; return; }
+    $("upcomingList").innerHTML = `<div class="results">${upcomingCache.map((m, i) => movieCard(m, "", i)).join("")}</div>`;
+    renderStats();
+  } catch {
+    $("upcomingList").innerHTML = `<div class="empty"><p>Erreur de chargement</p></div>`;
+  }
+}
+
+// =================== SOCIAL ===================
+function renderSocial() {
+  renderFollowingList();
+  loadFollowingReviews();
+}
+
+function renderFollowingList() {
+  $("followingCount").textContent = following.length;
+  if (!following.length) {
+    $("followingList").innerHTML = `<div class="empty" style="padding:20px"><p>Tu ne suis encore personne. Cherche des utilisateurs ci-dessus !</p></div>`;
+    return;
+  }
+  $("followingList").innerHTML = following.map(u => userCard(u, true)).join("");
+}
+
+function userCard(u, isFollowing = false) {
+  const initials = (u.username || u.email || "?").slice(0, 2).toUpperCase();
+  return `<div class="user-card">
+    <div class="u-avatar">${initials}</div>
+    <div class="u-info">
+      <div class="u-name">${esc(u.username || u.email)}</div>
+      <div class="u-stats">${u.watched_count || 0} films vus · ${u.review_count || 0} avis</div>
+    </div>
+    ${isFollowing
+      ? `<button class="btn danger" style="font-size:12px;padding:8px 12px" onclick="unfollow('${u.id}')">Se désabonner</button>`
+      : `<button class="btn success" style="font-size:12px;padding:8px 12px" onclick="follow(${encodeURIComponent(JSON.stringify(u))})">Suivre</button>`
+    }
+  </div>`;
+}
+
+async function searchUsers() {
+  const q = $("userSearch").value.trim();
+  if (!currentUser) {
+    $("userSearchResults").innerHTML = `<div class="empty"><p>Connecte-toi pour chercher des utilisateurs.</p></div>`;
+    return;
+  }
+  $("userSearchResults").innerHTML = `<div class="loading"><div class="spinner"></div></div>`;
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/profiles?username=ilike.*${encodeURIComponent(q)}*&select=id,username,email&limit=10`,
+      { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${currentUser.access_token}` } }
+    );
+    const users = await res.json();
+    if (!users.length) { $("userSearchResults").innerHTML = `<div class="empty"><p>Aucun utilisateur trouvé</p></div>`; return; }
+    const filtered = users.filter(u => u.id !== currentUser.id);
+    $("userSearchResults").innerHTML = filtered.map(u => {
+      const alreadyFollowing = following.some(f => f.id === u.id);
+      return alreadyFollowing ? userCard(u, true) : userCard(u, false);
+    }).join("") || `<div class="empty"><p>Aucun autre utilisateur trouvé</p></div>`;
+  } catch {
+    $("userSearchResults").innerHTML = `<div class="empty"><p>Erreur. Vérifie ta connexion.</p></div>`;
+  }
+}
+
+function follow(encodedUser) {
+  const u = JSON.parse(decodeURIComponent(encodedUser));
+  if (!following.some(f => f.id === u.id)) {
+    following.push(u);
+    saveAll();
+    renderSocial();
+    toast(`✅ Tu suis maintenant ${u.username || u.email}`);
+  }
+}
+
+function unfollow(userId) {
+  following = following.filter(f => f.id !== userId);
+  saveAll();
+  renderSocial();
+  toast("Désabonné");
+}
+
+async function loadFollowingReviews() {
+  if (!following.length || !currentUser) {
+    $("followingReviews").innerHTML = `<div class="empty"><p>${!currentUser ? "Connecte-toi pour voir les avis de tes abonnements." : "Suis des utilisateurs pour voir leurs avis."}</p></div>`;
+    return;
+  }
+  $("followingReviews").innerHTML = `<div class="loading"><div class="spinner"></div></div>`;
+  const allReviews = [];
+  for (const user of following) {
+    try {
+      const reviews = await sbGetUserReviews(user.id, currentUser.access_token);
+      reviews.forEach(r => allReviews.push({ ...r, user }));
+    } catch {}
+  }
+  if (!allReviews.length) {
+    $("followingReviews").innerHTML = `<div class="empty"><p>Tes abonnements n'ont pas encore noté de films.</p></div>`;
+    return;
+  }
+  $("followingReviews").innerHTML = allReviews.slice(0, 20).map(r => {
+    const m = r.movie_data || {};
+    const poster = m.poster_path ? `${IMG}${m.poster_path}` : "";
+    const initials = (r.user.username || r.user.email || "?").slice(0, 2).toUpperCase();
+    const stars = "★".repeat(Math.round((r.user_rating || 0) / 2)) + "☆".repeat(5 - Math.round((r.user_rating || 0) / 2));
+    return `<div class="follower-review-item">
+      <div class="sm-avatar">${initials}</div>
+      <div>
+        <div style="font-weight:700;font-size:14px">${esc(r.user.username || r.user.email)}</div>
+        <div style="display:flex;gap:10px;align-items:center;margin:4px 0">
+          ${poster ? `<img src="${poster}" alt="" style="width:36px;height:54px;border-radius:6px;object-fit:cover">` : ""}
+          <div>
+            <div style="font-size:13px;font-weight:600">${esc(m.title || "Film inconnu")}</div>
+            <div style="color:#ffd66d;font-size:14px">${stars} <span style="font-size:13px">${r.user_rating || 0}/10</span></div>
+            ${r.user_review ? `<div class="review-note" style="margin-top:4px">"${esc(r.user_review)}"</div>` : ""}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// =================== GAMES ===================
+const QUIZ_QUESTIONS = [
+  { q: "Dans quel film trouve-t-on la réplique \"Je vais lui faire une offre qu'il ne pourra pas refuser\" ?", opts: ["Scarface", "Le Parrain", "Casino", "Les Incorruptibles"], a: 1 },
+  { q: "Qui réalise la saga \"Le Seigneur des Anneaux\" ?", opts: ["Steven Spielberg", "James Cameron", "Peter Jackson", "Ridley Scott"], a: 2 },
+  { q: "Dans \"Titanic\", quel est le prénom du personnage de Leonardo DiCaprio ?", opts: ["Jake", "James", "Jack", "John"], a: 2 },
+  { q: "Quel film de 1994 met en scène un homme sur un banc avec une boîte de chocolats ?", opts: ["Rain Man", "Philadelphia", "Forrest Gump", "Cast Away"], a: 2 },
+  { q: "Quelle est la planète dans \"Avatar\" (2009) ?", opts: ["Pandora", "Aurora", "Eden", "Novus"], a: 0 },
+  { q: "Qui joue Iron Man dans le MCU ?", opts: ["Chris Evans", "Robert Downey Jr.", "Chris Hemsworth", "Mark Ruffalo"], a: 1 },
+  { q: "Quel film d'animation Pixar met en scène un robot dans un monde désolé ?", opts: ["Wall-E", "Up", "Cars", "A Bug's Life"], a: 0 },
+  { q: "Dans quel film Steven Spielberg dirige-t-il une expédition vers les dinosaures ?", opts: ["Jurassic World", "Jurassic Park", "The Lost World", "Dinotopia"], a: 1 },
+  { q: "Quel acteur joue Neo dans \"Matrix\" ?", opts: ["Tom Cruise", "Brad Pitt", "Keanu Reeves", "Will Smith"], a: 2 },
+  { q: "Quel studio a produit \"Toy Story\" ?", opts: ["DreamWorks", "Disney", "Pixar", "Warner Bros"], a: 2 },
+];
+
+const WORDLE_MOVIES = [
+  { word: "ALIEN", hint: "Ridley Scott, 1979" },
+  { word: "DUNE", hint: "Denis Villeneuve, 2021" },
+  { word: "LEON", hint: "Luc Besson, 1994" },
+  { word: "JAWS", hint: "Spielberg, 1975" },
+  { word: "HEAT", hint: "Michael Mann, 1995" },
+  { word: "ARGO", hint: "Ben Affleck, 2012" },
+  { word: "HUGO", hint: "Scorsese, 2011" },
+  { word: "ROMA", hint: "Alfonso Cuarón, 2018" },
+];
+
+const HANGMAN_MOVIES = [
+  { word: "INTERSTELLAR", hint: "Christopher Nolan, voyage dans l'espace-temps" },
+  { word: "INCEPTION", hint: "Nolan, rêves dans les rêves" },
+  { word: "PARASITE", hint: "Bong Joon-ho, Palme d'Or 2019" },
+  { word: "AVENGERS", hint: "Marvel, les super-héros s'assemblent" },
+  { word: "GLADIATEUR", hint: "Ridley Scott, Russell Crowe" },
+  { word: "SHINING", hint: "Kubrick, hotel maudit" },
+  { word: "MATRIX", hint: "Wachowski, pilule rouge ou bleue" },
+  { word: "GODFATHER", hint: "Coppola, la mafia" },
+];
+
+const GUESS_MOVIES = [
+  { desc: "Un comptable taciturne libère ses rêves de pianiste après un accident. Film de 1991 avec Gérard Depardieu.", answer: "TOUS LES MATINS DU MONDE" },
+  { desc: "Une jeune fille tombe dans un monde souterrain fantastique pendant la guerre civile espagnole.", answer: "LE LABYRINTHE DE PAN" },
+  { desc: "Un homme sort de prison et cherche à reconstruire sa vie grâce à un curé compatissant.", answer: "LES MISÉRABLES" },
+  { desc: "Deux frères mènent une course poursuite autour du monde en 80 jours pour gagner un pari.", answer: "LE TOUR DU MONDE EN 80 JOURS" },
+  { desc: "Un petit poisson clownfish traverse l'océan pour retrouver son fils.", answer: "LE MONDE DE NEMO" },
+];
+
+const YEAR_MOVIES = [
+  { title: "Le Parrain", year: 1972, poster: null },
+  { title: "Titanic", year: 1997, poster: null },
+  { title: "Avatar", year: 2009, poster: null },
+  { title: "Pulp Fiction", year: 1994, poster: null },
+  { title: "Matrix", year: 1999, poster: null },
+  { title: "Inception", year: 2010, poster: null },
+  { title: "Parasite", year: 2019, poster: null },
+  { title: "Interstellar", year: 2014, poster: null },
+];
+
+let gameState = {};
+
+function openGame(type) {
+  $("gameModal").classList.add("open");
+  gameState = { type, score: 0, questionIndex: 0, lives: 6, guesses: [], currentWord: "", finished: false };
+  renderGame(type);
+}
+
+function closeGame() {
+  $("gameModal").classList.remove("open");
+  gameState = {};
+}
+
+function renderGame(type) {
+  if (type === "quiz") renderQuiz();
+  else if (type === "wordle") renderWordle();
+  else if (type === "memory") renderMemory();
+  else if (type === "hangman") renderHangman();
+  else if (type === "guess") renderGuess();
+  else if (type === "year") renderYearGame();
+}
+
+// -- QUIZ --
+function renderQuiz() {
+  const qi = gameState.questionIndex;
+  if (qi >= QUIZ_QUESTIONS.length) {
+    const pct = Math.round(gameState.score / QUIZ_QUESTIONS.length * 100);
+    $("gameContent").innerHTML = `
+      <h3 style="margin-bottom:12px">🎬 Quiz Terminé !</h3>
+      <div class="quiz-score">${gameState.score} / ${QUIZ_QUESTIONS.length}</div>
+      <p style="text-align:center;color:#9eb0cf;margin-bottom:16px">${pct >= 80 ? "🏆 Excellent !" : pct >= 60 ? "👍 Pas mal !" : "📚 Révise un peu !"}</p>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button class="btn primary" onclick="openGame('quiz')">Rejouer</button>
+        <button class="btn soft" onclick="closeGame()">Fermer</button>
+      </div>`;
+    return;
+  }
+  const q = QUIZ_QUESTIONS[qi];
+  const prog = Array.from({ length: QUIZ_QUESTIONS.length }, (_, i) =>
+    `<div class="trivia-prog-dot ${i < qi ? "done" : i === qi ? "current" : ""}"></div>`
+  ).join("");
+  $("gameContent").innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h3>🎬 Quiz Cinéma</h3>
+      <button class="btn soft" style="font-size:12px;padding:6px 10px" onclick="closeGame()">✕</button>
+    </div>
+    <div class="trivia-prog">${prog}</div>
+    <p style="font-size:13px;color:#9eb0cf;margin-bottom:10px">Question ${qi + 1} / ${QUIZ_QUESTIONS.length} · Score : <strong style="color:#ffd66d">${gameState.score}</strong></p>
+    <div class="quiz-q">${esc(q.q)}</div>
+    <div class="quiz-options">${q.opts.map((o, i) => `<button class="quiz-opt" onclick="answerQuiz(${i},this)">${esc(o)}</button>`).join("")}</div>`;
+}
+
+function answerQuiz(i, btn) {
+  const q = QUIZ_QUESTIONS[gameState.questionIndex];
+  document.querySelectorAll(".quiz-opt").forEach(b => b.onclick = null);
+  if (i === q.a) {
+    btn.classList.add("correct");
+    gameState.score++;
+    toast("✅ Bonne réponse !");
+  } else {
+    btn.classList.add("wrong");
+    document.querySelectorAll(".quiz-opt")[q.a].classList.add("correct");
+    toast("❌ Mauvaise réponse !");
+  }
+  gameState.questionIndex++;
+  setTimeout(() => renderQuiz(), 1200);
+}
+
+// -- WORDLE --
+function renderWordle() {
+  if (!gameState.wordleWord) {
+    const pick = WORDLE_MOVIES[Math.floor(Math.random() * WORDLE_MOVIES.length)];
+    gameState.wordleWord = pick.word;
+    gameState.wordleHint = pick.hint;
+    gameState.wordleGuesses = [];
+    gameState.wordleCurrent = "";
+    gameState.wordleFinished = false;
+  }
+  const word = gameState.wordleWord;
+  const guesses = gameState.wordleGuesses;
+  const maxGuesses = 6;
+  const rows = Array.from({ length: maxGuesses }, (_, ri) => {
+    const g = guesses[ri] || "";
+    const cells = Array.from({ length: word.length }, (_, ci) => {
+      const letter = g[ci] || "";
+      let cls = "";
+      if (g.length === word.length) {
+        if (letter === word[ci]) cls = "correct";
+        else if (word.includes(letter) && letter) cls = "present";
+        else if (letter) cls = "absent";
+      } else if (ri === guesses.length && ci < gameState.wordleCurrent.length) {
+        cls = "active-cell";
+      }
+      const display = ri === guesses.length ? (gameState.wordleCurrent[ci] || "") : letter;
+      return `<div class="wordle-cell ${cls}">${display}</div>`;
+    }).join("");
+    return `<div class="wordle-row">${cells}</div>`;
+  }).join("");
+
+  const keyboard = [
+    ["Q","W","E","R","T","Y","U","I","O","P"],
+    ["A","S","D","F","G","H","J","K","L"],
+    ["↵","Z","X","C","V","B","N","M","⌫"]
+  ];
+  const usedLetters = {};
+  guesses.forEach(g => {
+    for (let ci = 0; ci < g.length; ci++) {
+      const l = g[ci];
+      if (l === word[ci]) usedLetters[l] = "correct";
+      else if (word.includes(l)) { if (usedLetters[l] !== "correct") usedLetters[l] = "present"; }
+      else usedLetters[l] = "absent";
+    }
+  });
+  const kb = keyboard.map(row =>
+    `<div class="wk-row">${row.map(k => {
+      const cls = k.length === 1 ? (usedLetters[k] || "") : "";
+      return `<button class="wk-key ${cls}" onclick="wordleKey('${k}')">${k}</button>`;
+    }).join("")}</div>`
+  ).join("");
+
+  const lastGuess = guesses[guesses.length - 1];
+  const won = lastGuess === word;
+  const lost = guesses.length >= maxGuesses && !won;
+
+  $("gameContent").innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <h3>🔤 Ciné-Wordle</h3>
+      <button class="btn soft" style="font-size:12px;padding:6px 10px" onclick="closeGame()">✕</button>
+    </div>
+    <p style="color:#9eb0cf;font-size:13px;margin-bottom:8px">Film de ${word.length} lettres · ${gameState.wordleHint}</p>
+    ${won ? `<div style="text-align:center;color:#80e8a0;font-weight:700;font-size:18px;margin-bottom:8px">🎉 Bravo ! C'était ${word} !</div>` : ""}
+    ${lost ? `<div style="text-align:center;color:#ff9999;font-weight:700;font-size:18px;margin-bottom:8px">😅 C'était : ${word}</div>` : ""}
+    <div class="wordle-grid">${rows}</div>
+    ${(won || lost) ? `<div style="display:flex;gap:10px;justify-content:center;margin-top:12px"><button class="btn primary" onclick="gameState.wordleWord=null;renderWordle()">Nouveau film</button><button class="btn soft" onclick="closeGame()">Fermer</button></div>` : `<div class="wordle-keyboard">${kb}</div>`}`;
+}
+
+function wordleKey(k) {
+  if (gameState.wordleFinished) return;
+  const word = gameState.wordleWord;
+  if (k === "⌫") {
+    gameState.wordleCurrent = gameState.wordleCurrent.slice(0, -1);
+  } else if (k === "↵") {
+    if (gameState.wordleCurrent.length === word.length) {
+      gameState.wordleGuesses.push(gameState.wordleCurrent);
+      const won = gameState.wordleCurrent === word;
+      gameState.wordleCurrent = "";
+      if (won || gameState.wordleGuesses.length >= 6) gameState.wordleFinished = true;
+    }
+  } else if (gameState.wordleCurrent.length < word.length) {
+    gameState.wordleCurrent += k;
+  }
+  renderWordle();
+}
+
+document.addEventListener("keydown", e => {
+  if (!$("gameModal").classList.contains("open")) return;
+  if (gameState.type !== "wordle") return;
+  const k = e.key.toUpperCase();
+  if (k === "BACKSPACE") wordleKey("⌫");
+  else if (k === "ENTER") wordleKey("↵");
+  else if (/^[A-Z]$/.test(k)) wordleKey(k);
+});
+
+// -- MEMORY --
+function renderMemory() {
+  const emojis = ["🎬","🎥","🍿","🎭","🎞","🏆","🌟","⭐"];
+  if (!gameState.memoryCards) {
+    const cards = [...emojis, ...emojis].map((e, i) => ({ id: i, emoji: e, flipped: false, matched: false }));
+    for (let i = cards.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [cards[i], cards[j]] = [cards[j], cards[i]];
+    }
+    gameState.memoryCards = cards;
+    gameState.memoryFlipped = [];
+    gameState.memoryMoves = 0;
+    gameState.memoryLocked = false;
+  }
+  const cards = gameState.memoryCards;
+  const allMatched = cards.every(c => c.matched);
+  const grid = cards.map((c, i) =>
+    `<div class="memory-card ${c.flipped || c.matched ? "flipped" : ""} ${c.matched ? "matched" : ""}" onclick="flipCard(${i})">${c.flipped || c.matched ? c.emoji : "🎬"}</div>`
+  ).join("");
+
+  $("gameContent").innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h3>🃏 Memory Cinéma</h3>
+      <button class="btn soft" style="font-size:12px;padding:6px 10px" onclick="closeGame()">✕</button>
+    </div>
+    <p style="color:#9eb0cf;font-size:13px;margin-bottom:12px">Retrouve les paires · Coups : <strong style="color:#ffd66d">${gameState.memoryMoves}</strong></p>
+    ${allMatched ? `<div style="text-align:center;color:#80e8a0;font-weight:700;font-size:18px;margin-bottom:12px">🎉 Gagné en ${gameState.memoryMoves} coups !</div>` : ""}
+    <div class="memory-grid">${grid}</div>
+    ${allMatched ? `<div style="display:flex;gap:10px;justify-content:center;margin-top:14px"><button class="btn primary" onclick="gameState.memoryCards=null;renderMemory()">Rejouer</button><button class="btn soft" onclick="closeGame()">Fermer</button></div>` : ""}`;
+}
+
+function flipCard(i) {
+  if (gameState.memoryLocked) return;
+  const cards = gameState.memoryCards;
+  if (cards[i].flipped || cards[i].matched) return;
+  cards[i].flipped = true;
+  gameState.memoryFlipped.push(i);
+  if (gameState.memoryFlipped.length === 2) {
+    gameState.memoryMoves++;
+    const [a, b] = gameState.memoryFlipped;
+    gameState.memoryFlipped = [];
+    if (cards[a].emoji === cards[b].emoji) {
+      cards[a].matched = true;
+      cards[b].matched = true;
+      renderMemory();
+    } else {
+      gameState.memoryLocked = true;
+      renderMemory();
+      setTimeout(() => {
+        cards[a].flipped = false;
+        cards[b].flipped = false;
+        gameState.memoryLocked = false;
+        renderMemory();
+      }, 900);
+    }
+  } else {
+    renderMemory();
+  }
+}
+
+// -- HANGMAN --
+function renderHangman() {
+  if (!gameState.hangmanWord) {
+    const pick = HANGMAN_MOVIES[Math.floor(Math.random() * HANGMAN_MOVIES.length)];
+    gameState.hangmanWord = pick.word;
+    gameState.hangmanHint = pick.hint;
+    gameState.hangmanGuessed = new Set();
+    gameState.hangmanLives = 7;
+  }
+  const word = gameState.hangmanWord;
+  const guessed = gameState.hangmanGuessed;
+  const lives = gameState.hangmanLives;
+  const figures = ["💀","😱","😨","😰","😟","😐","😊","🙂"];
+  const won = [...word].filter(l => l !== " ").every(l => guessed.has(l));
+  const lost = lives <= 0;
+  const wordDisplay = [...word].map(l =>
+    l === " " ? `<span style="width:20px;display:inline-block"></span>` :
+    `<div class="hangman-letter">${guessed.has(l) ? l : ""}</div>`
+  ).join("");
+
+  const alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+  const keyboard = alpha.map(l =>
+    `<button class="h-key" ${guessed.has(l) ? "disabled" : ""} onclick="hangmanGuess('${l}')">${l}</button>`
+  ).join("");
+
+  $("gameContent").innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <h3>🎭 Pendu Ciné</h3>
+      <button class="btn soft" style="font-size:12px;padding:6px 10px" onclick="closeGame()">✕</button>
+    </div>
+    <p style="color:#9eb0cf;font-size:13px;margin-bottom:4px">Indice : ${esc(gameState.hangmanHint)}</p>
+    <div class="hangman-figure">${figures[lives]}</div>
+    <p style="text-align:center;color:#9eb0cf;font-size:13px;margin-bottom:8px">❤️ Vies restantes : <strong style="color:#ff9b62">${lives}</strong></p>
+    ${won ? `<div style="text-align:center;color:#80e8a0;font-weight:700;font-size:18px;margin-bottom:8px">🎉 Bravo ! C'était ${word} !</div>` : ""}
+    ${lost ? `<div style="text-align:center;color:#ff9999;font-weight:700;font-size:18px;margin-bottom:8px">💀 Perdu ! C'était : ${word}</div>` : ""}
+    <div class="hangman-word">${wordDisplay}</div>
+    ${(won || lost) ? `<div style="display:flex;gap:10px;justify-content:center;margin-top:12px"><button class="btn primary" onclick="gameState.hangmanWord=null;renderHangman()">Nouveau film</button><button class="btn soft" onclick="closeGame()">Fermer</button></div>` : `<div class="hangman-kb">${keyboard}</div>`}`;
+}
+
+function hangmanGuess(l) {
+  gameState.hangmanGuessed.add(l);
+  if (!gameState.hangmanWord.includes(l)) gameState.hangmanLives--;
+  renderHangman();
+}
+
+// -- GUESS THE MOVIE --
+function renderGuess() {
+  if (!gameState.guessMovie) {
+    gameState.guessMovie = GUESS_MOVIES[Math.floor(Math.random() * GUESS_MOVIES.length)];
+    gameState.guessInput = "";
+    gameState.guessResult = null;
+  }
+  const m = gameState.guessMovie;
+  $("gameContent").innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h3>🕵️ Devine le Film</h3>
+      <button class="btn soft" style="font-size:12px;padding:6px 10px" onclick="closeGame()">✕</button>
+    </div>
+    <div class="panel" style="margin-bottom:16px">
+      <p style="line-height:1.7;font-size:15px">${esc(m.desc)}</p>
+    </div>
+    ${gameState.guessResult === "correct" ? `<div style="color:#80e8a0;font-weight:700;text-align:center;margin-bottom:12px">🎉 Exact ! C'est bien "${m.answer}" !</div>` : ""}
+    ${gameState.guessResult === "wrong" ? `<div style="color:#ff9999;text-align:center;margin-bottom:8px">❌ Essaie encore ! (réponse en ${m.answer.length} lettres)</div>` : ""}
+    ${gameState.guessResult === "give_up" ? `<div style="color:#9eb0cf;text-align:center;margin-bottom:12px">La réponse était : <strong style="color:#ffd66d">${m.answer}</strong></div>` : ""}
+    <input class="ghost" id="guessInput" placeholder="Titre du film..." value="${esc(gameState.guessInput)}" style="width:100%;margin-bottom:10px">
+    <div style="display:flex;gap:10px;justify-content:center">
+      ${gameState.guessResult !== "correct" && gameState.guessResult !== "give_up" ? `<button class="btn primary" onclick="submitGuess()">Valider</button><button class="btn soft" onclick="giveUp()">Abandonner</button>` : `<button class="btn primary" onclick="gameState.guessMovie=null;renderGuess()">Nouveau film</button>`}
+      <button class="btn soft" onclick="closeGame()">Fermer</button>
+    </div>`;
+}
+
+function submitGuess() {
+  const input = $("guessInput").value.trim().toUpperCase();
+  gameState.guessInput = input;
+  const answer = gameState.guessMovie.answer.toUpperCase();
+  if (input === answer || answer.includes(input) && input.length > 3) {
+    gameState.guessResult = "correct";
+  } else {
+    gameState.guessResult = "wrong";
+  }
+  renderGuess();
+}
+
+function giveUp() {
+  gameState.guessResult = "give_up";
+  renderGuess();
+}
+
+// -- YEAR GAME --
+function renderYearGame() {
+  if (!gameState.yearMovie) {
+    gameState.yearMovie = YEAR_MOVIES[Math.floor(Math.random() * YEAR_MOVIES.length)];
+    gameState.yearGuess = null;
+    gameState.yearScore = gameState.yearScore || 0;
+    gameState.yearRound = (gameState.yearRound || 0);
+  }
+  const m = gameState.yearMovie;
+  const diff = gameState.yearGuess !== null ? Math.abs(gameState.yearGuess - m.year) : null;
+  $("gameContent").innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h3>📅 Quelle Année ?</h3>
+      <button class="btn soft" style="font-size:12px;padding:6px 10px" onclick="closeGame()">✕</button>
+    </div>
+    <p style="color:#9eb0cf;font-size:13px;margin-bottom:12px">Manche ${gameState.yearRound + 1} · Score : <strong style="color:#ffd66d">${gameState.yearScore}</strong></p>
+    <div style="text-align:center;margin:16px 0">
+      <div style="font-size:28px;font-weight:700;margin-bottom:8px">${esc(m.title)}</div>
+      <p style="color:#9eb0cf">Quelle est l'année de sortie de ce film ?</p>
+    </div>
+    ${diff !== null ? `
+      <div style="text-align:center;margin:12px 0">
+        ${diff === 0 ? `<div style="color:#80e8a0;font-size:20px;font-weight:700">🎯 Parfait ! C'était bien ${m.year} !</div>` :
+          diff <= 2 ? `<div style="color:#ffd66d;font-size:18px;font-weight:700">👍 Très proche ! C'était ${m.year} (tu as dit ${gameState.yearGuess})</div>` :
+          `<div style="color:#ff9999;font-size:16px">❌ C'était ${m.year} (tu as dit ${gameState.yearGuess}, différence : ${diff} ans)</div>`}
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button class="btn primary" onclick="nextYearGame()">Film suivant</button>
+        <button class="btn soft" onclick="closeGame()">Fermer</button>
+      </div>` :
+    `<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px">
+      ${[1970,1975,1980,1985,1990,1995,2000,2003,2006,2009,2012,2015,2018,2021,2024].map(y =>
+        `<button class="btn soft" style="padding:10px 14px;font-size:14px" onclick="guessYear(${y})">${y}</button>`
+      ).join("")}
+    </div>`}`;
+}
+
+function guessYear(y) {
+  const m = gameState.yearMovie;
+  const diff = Math.abs(y - m.year);
+  gameState.yearGuess = y;
+  if (diff === 0) gameState.yearScore += 3;
+  else if (diff <= 2) gameState.yearScore += 1;
+  renderYearGame();
+}
+
+function nextYearGame() {
+  gameState.yearRound = (gameState.yearRound || 0) + 1;
+  gameState.yearMovie = null;
+  gameState.yearGuess = null;
+  renderYearGame();
+}
+
+// =================== INIT ===================
+function init() {
+  fillSelects();
+  renderProfile();
+  renderStats();
+  updateSettings();
+  renderRecommendations();
+  loadHome();
+  document.querySelectorAll(".nav button").forEach(b => b.onclick = () => showPage(b.dataset.page));
+  $("randomBtn").onclick = randomMovie;
+  $("languageSelect").onchange = e => {
+    lang = e.target.value;
+    account.language = lang;
+    fillSelects();
+    saveAll();
+    loadHome();
+  };
+  $("quickSave").onclick = () => {
+    if ($("accountName")) $("accountName").value = $("quickName").value;
+    saveAccount();
+  };
+  $("search").addEventListener("keydown", e => { if (e.key === "Enter") searchMovies(1); });
+  $("searchBtn").onclick = () => searchMovies(1);
+  document.getElementById("gameModal").onclick = e => {
+    if (e.target === document.getElementById("gameModal")) closeGame();
+  };
+  document.getElementById("ratingModal").onclick = e => {
+    if (e.target === document.getElementById("ratingModal")) closeModal();
+  };
+}
+
+init();
+</script>
+</body>
+</html>
