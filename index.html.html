@@ -1794,6 +1794,74 @@ function init() {
     if (e.target === document.getElementById("ratingModal")) closeModal();
   };
 }
+                         function clearLocalData() {
+  favorites = [];
+  watched = [];
+  following = [];
+  // Ne pas toucher à account (profil) ni à la langue
+}
+                         async function loadUserDataFromSupabase() {
+  if (!currentUser?.access_token) return;
+  try {
+    // Charger les films vus
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/watched_movies?user_id=eq.${currentUser.id}&select=*`,
+      { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${currentUser.access_token}` } }
+    );
+    const rows = await res.json();
+    if (Array.isArray(rows)) {
+      watched = rows.map(r => ({
+        ...r.movie_data,
+        userRating: r.user_rating,
+        userReview: r.user_review
+      }));
+    }
+
+    // Charger les favoris
+    const resFav = await fetch(
+      `${SUPABASE_URL}/rest/v1/favorites?user_id=eq.${currentUser.id}&select=*`,
+      { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${currentUser.access_token}` } }
+    );
+    const favRows = await resFav.json();
+    if (Array.isArray(favRows)) {
+      favorites = favRows.map(r => r.movie_data);
+    }
+
+    // Charger les abonnements
+    const resFollow = await fetch(
+      `${SUPABASE_URL}/rest/v1/follows?follower_id=eq.${currentUser.id}&select=following_id,profiles(id,username,email)`,
+      { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${currentUser.access_token}` } }
+    );
+    const followRows = await resFollow.json();
+    if (Array.isArray(followRows)) {
+      following = followRows.map(r => r.profiles).filter(Boolean);
+    }
+
+  } catch (e) {
+    console.error("Erreur chargement données:", e);
+  }
+}
+                         async function sbSaveFavorites(userId, token) {
+  // Supprimer les anciens puis réinsérer
+  await fetch(`${SUPABASE_URL}/rest/v1/favorites?user_id=eq.${userId}`, {
+    method: "DELETE",
+    headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` }
+  });
+  if (!favorites.length) return;
+  await fetch(`${SUPABASE_URL}/rest/v1/favorites`, {
+    method: "POST",
+    headers: {
+      "apikey": SUPABASE_KEY,
+      "Authorization": `Bearer ${token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(favorites.map(m => ({
+      user_id: userId,
+      movie_id: m.id,
+      movie_data: m
+    })))
+  });
+}
 
 init();
 </script>
