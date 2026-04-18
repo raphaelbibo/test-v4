@@ -655,7 +655,7 @@ function toggleAuthMode() {
   document.getElementById("authErr").textContent = "";
 }
 
-async function doAuth() {   const email = document.getElementById("authEmail").value.trim();   const pass = document.getElementById("authPass").value;   const name = document.getElementById("authName").value.trim();   const errEl = document.getElementById("authErr");   errEl.textContent = "";   if (!email || !pass) { errEl.textContent = "Email et mot de passe requis"; return; }   document.getElementById("authSubmit").textContent = "Chargement...";   try {     const data = await sbAuth(email, pass, authMode);     if (data.error || data.msg) {       errEl.textContent = data.error_description || data.msg || "Erreur";       document.getElementById("authSubmit").textContent = authMode === "register" ? "Créer mon compte" : "Se connecter";       return;     }     currentUser = data.user || data;     currentUser.access_token = data.access_token;      if (authMode === "register" && name) {       await sbUpsertProfile(currentUser.id, { username: name, email }, currentUser.access_token);     }      // ✅ Vider les données locales AVANT de charger celles du compte     clearLocalData();      // ✅ Charger les données depuis Supabase     await loadUserDataFromSupabase();      account.name = name || email.split("@")[0];     account.email = email;     account.memberSince = account.memberSince || new Date().toLocaleDateString("fr-FR");     // Sauvegarder avec un préfixe unique par user     saveAll();     updateAuthUI();     hideAuth();     renderFavorites();     renderWatched();     renderReviews();     renderStats();     toast(authMode === "register" ? "🎉 Compte créé ! Bienvenue !" : "✅ Connecté !");   } catch (e) {     errEl.textContent = "Erreur réseau. Vérifier la connexion.";     document.getElementById("authSubmit").textContent = authMode === "register" ? "Créer mon compte" : "Se connecter";   } } {
+async function doAuth() {
   const email = document.getElementById("authEmail").value.trim();
   const pass = document.getElementById("authPass").value;
   const name = document.getElementById("authName").value.trim();
@@ -693,7 +693,7 @@ function continueLocal() {
   toast("Mode local activé");
 }
 
-async function doLogout() {   if (currentUser?.access_token) await sbLogout(currentUser.access_token);      // ✅ Vider toutes les données en mémoire   clearLocalData();   currentUser = null;      // Recharger l'interface vide   renderFavorites();   renderWatched();   renderReviews();   renderStats();   updateAuthUI();   toast("👋 Déconnecté"); } {   if (currentUser?.access_token) await sbLogout(currentUser.access_token);      // ✅ Vider toutes les données en mémoire   clearLocalData();   currentUser = null;      // Recharger l'interface vide   renderFavorites();   renderWatched();   renderReviews();   renderStats();   updateAuthUI();   toast("👋 Déconnecté"); } {
+async function doLogout() {
   if (currentUser?.access_token) await sbLogout(currentUser.access_token);
   currentUser = null;
   updateAuthUI();
@@ -729,7 +729,7 @@ function fillSelect(id, data) {
   el.value = v || data[0][0];
 }
 
-function saveAll() {   // Sauvegarder localement avec un préfixe par user pour isoler les données   const prefix = currentUser ? currentUser.id : "local";   localStorage.setItem(`fav_${prefix}`, JSON.stringify(favorites));   localStorage.setItem(`watched_${prefix}`, JSON.stringify(watched));   localStorage.setItem(ACCOUNT_KEY, JSON.stringify(account));   localStorage.setItem("following", JSON.stringify(following));    // Sauvegarder dans Supabase si connecté   if (currentUser?.access_token) {     sbSaveWatched(currentUser.id, currentUser.access_token).catch(() => {});     sbSaveFavorites(currentUser.id, currentUser.access_token).catch(() => {});   }   renderProfile();   renderStats();   updateSettings(); } {
+function saveAll() {
   localStorage.setItem("fav", JSON.stringify(favorites));
   localStorage.setItem("watched", JSON.stringify(watched));
   localStorage.setItem(ACCOUNT_KEY, JSON.stringify(account));
@@ -1793,74 +1793,6 @@ function init() {
   document.getElementById("ratingModal").onclick = e => {
     if (e.target === document.getElementById("ratingModal")) closeModal();
   };
-}
-                         function clearLocalData() {
-  favorites = [];
-  watched = [];
-  following = [];
-  // Ne pas toucher à account (profil) ni à la langue
-}
-                         async function loadUserDataFromSupabase() {
-  if (!currentUser?.access_token) return;
-  try {
-    // Charger les films vus
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/watched_movies?user_id=eq.${currentUser.id}&select=*`,
-      { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${currentUser.access_token}` } }
-    );
-    const rows = await res.json();
-    if (Array.isArray(rows)) {
-      watched = rows.map(r => ({
-        ...r.movie_data,
-        userRating: r.user_rating,
-        userReview: r.user_review
-      }));
-    }
-
-    // Charger les favoris
-    const resFav = await fetch(
-      `${SUPABASE_URL}/rest/v1/favorites?user_id=eq.${currentUser.id}&select=*`,
-      { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${currentUser.access_token}` } }
-    );
-    const favRows = await resFav.json();
-    if (Array.isArray(favRows)) {
-      favorites = favRows.map(r => r.movie_data);
-    }
-
-    // Charger les abonnements
-    const resFollow = await fetch(
-      `${SUPABASE_URL}/rest/v1/follows?follower_id=eq.${currentUser.id}&select=following_id,profiles(id,username,email)`,
-      { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${currentUser.access_token}` } }
-    );
-    const followRows = await resFollow.json();
-    if (Array.isArray(followRows)) {
-      following = followRows.map(r => r.profiles).filter(Boolean);
-    }
-
-  } catch (e) {
-    console.error("Erreur chargement données:", e);
-  }
-}
-                         async function sbSaveFavorites(userId, token) {
-  // Supprimer les anciens puis réinsérer
-  await fetch(`${SUPABASE_URL}/rest/v1/favorites?user_id=eq.${userId}`, {
-    method: "DELETE",
-    headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` }
-  });
-  if (!favorites.length) return;
-  await fetch(`${SUPABASE_URL}/rest/v1/favorites`, {
-    method: "POST",
-    headers: {
-      "apikey": SUPABASE_KEY,
-      "Authorization": `Bearer ${token}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(favorites.map(m => ({
-      user_id: userId,
-      movie_id: m.id,
-      movie_data: m
-    })))
-  });
 }
 
 init();
